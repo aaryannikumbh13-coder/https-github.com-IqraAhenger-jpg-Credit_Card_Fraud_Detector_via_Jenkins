@@ -1,0 +1,8 @@
+version: '3.9'
+services:
+  fraud-app:
+    build: .
+    container_name: fraud_detector_app
+    ports:
+      - "5001:5001"
+    restart: always

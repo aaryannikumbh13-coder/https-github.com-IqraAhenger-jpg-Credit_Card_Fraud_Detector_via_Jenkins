@@ -1,0 +1,46 @@
+from __future__ import annotations
+
+import joblib
+import pandas as pd
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+
+def main() -> None:
+    df = pd.read_csv("data/creditcard.csv")
+
+    if "Class" not in df.columns:
+        raise ValueError("Dataset must contain a 'Class' column.")
+
+    X = df.drop("Class", axis=1)
+    y = df["Class"]
+
+    scaler = StandardScaler()
+    X_scaled = scaler.fit_transform(X)
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_scaled,
+        y,
+        test_size=0.2,
+        random_state=42,
+        stratify=y,
+    )
+
+    model = LogisticRegression(max_iter=2000)
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    print("Accuracy:", accuracy_score(y_test, y_pred))
+    print("\nClassification Report:\n")
+    print(classification_report(y_test, y_pred))
+
+    joblib.dump(model, "model.pkl")
+    joblib.dump(scaler, "scaler.pkl")
+    print("\nSaved model.pkl and scaler.pkl successfully.")
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,63 @@
+pipeline {
+    agent any
+
+    environment {
+        IMAGE_NAME = 'credit-card-fraud-detector'
+        CONTAINER_NAME = 'fraud_detector_app'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', url: 'https://github.com/IqraAhenger-jpg/Credit_Card_Fraud_Detector_viaJenkins.git'
+            }
+        }
+
+        stage('Set up Python') {
+            steps {
+                sh '''
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
+                '''
+            }
+        }
+
+        stage('Train Model') {
+            steps {
+                sh '''
+                    . venv/bin/activate
+                    python train_model.py
+                    test -f model.pkl
+                    test -f scaler.pkl
+                '''
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                sh 'docker build -t ${IMAGE_NAME} .'
+            }
+        }
+
+        stage('Deploy Container') {
+            steps {
+                sh '''
+                    docker stop ${CONTAINER_NAME} || true
+                    docker rm ${CONTAINER_NAME} || true
+                    docker run -d --name ${CONTAINER_NAME} -p 5001:5001 ${IMAGE_NAME}
+                '''
+            }
+        }
+    }
+
+    post {
+        success {
+            echo 'Build, training, and deployment completed successfully.'
+        }
+        failure {
+            echo 'Pipeline failed. Please check the console output.'
+        }
+    }
+}
